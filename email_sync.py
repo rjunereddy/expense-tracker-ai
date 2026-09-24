@@ -94,8 +94,11 @@ def log_transaction(amount, merchant):
     try:
         model = load_model("data/categorizer.joblib")
     except FileNotFoundError:
-        print("[-] ML Model not found. Please run the dashboard once to generate the initial model.")
-        return
+        print("[-] ML Model not found. Generating base model now...")
+        from generate_data import generate
+        from categorize import train
+        train(generate(n_days=180))
+        model = load_model("data/categorizer.joblib")
         
     pred_cat, conf = predict([merchant], model)[0]
     
