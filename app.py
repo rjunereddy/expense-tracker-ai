@@ -111,6 +111,22 @@ def main():
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         max-width: 500px;
         margin: 50px auto;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Insight Cards styling */
+    .insight-card {
+        background: linear-gradient(145deg, rgba(127, 0, 255, 0.1) 0%, rgba(225, 0, 255, 0.02) 100%);
+        border: 1px solid rgba(127, 0, 255, 0.2);
+        border-left: 4px solid #e100ff;
+        padding: 16px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        transition: transform 0.3s ease;
+    }
+    
+    .insight-card:hover {
+        transform: translateY(-3px);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -353,11 +369,49 @@ def main():
                 unsafe_allow_html=True
             )
 
+        st.write("---")
+        st.markdown("<h3>💡 <span class='header-tag'>Smart AI Insights</span></h3>", unsafe_allow_html=True)
+        insight_cols = st.columns(3)
+        
+        expenses_only = df[df["type"] == "Expense"].copy()
+        
+        if not expenses_only.empty:
+            by_cat = expenses_only.groupby("category")["amount"].sum().sort_values(ascending=False).reset_index()
+            top_cat = by_cat.iloc[0]["category"]
+            top_cat_amt = by_cat.iloc[0]["amount"]
+            
+            insight_cols[0].markdown(
+                f"<div class='insight-card'><b>🏆 Highest Spend Category</b><br/>You spent <b>₹{top_cat_amt:,.0f}</b> on <b>{top_cat}</b>, which is your top category this period.</div>", 
+                unsafe_allow_html=True
+            )
+            
+            expenses_only["is_weekend"] = pd.to_datetime(expenses_only["date"]).dt.dayofweek >= 5
+            weekend_spend = expenses_only[expenses_only["is_weekend"]]["amount"].sum()
+            weekday_spend = expenses_only[~expenses_only["is_weekend"]]["amount"].sum()
+            if weekend_spend > weekday_spend:
+                insight_cols[1].markdown(
+                    f"<div class='insight-card'><b>🏖️ Weekend Warrior</b><br/>You spend more on weekends (<b>₹{weekend_spend:,.0f}</b>) than on weekdays (<b>₹{weekday_spend:,.0f}</b>).</div>",
+                    unsafe_allow_html=True
+                )
+            else:
+                insight_cols[1].markdown(
+                    f"<div class='insight-card'><b>🏢 Weekday Spender</b><br/>Most of your spending happens on weekdays (<b>₹{weekday_spend:,.0f}</b>).</div>",
+                    unsafe_allow_html=True
+                )
+                
+            largest_txn = expenses_only.loc[expenses_only["amount"].idxmax()]
+            insight_cols[2].markdown(
+                f"<div class='insight-card'><b>🐋 Largest Transaction</b><br/>Your largest single expense was <b>₹{largest_txn['amount']:,.0f}</b> at <b>{largest_txn['description']}</b>.</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.info("Log some expenses to see smart insights.")
+
+        st.write("---")
         chart_col, budget_col = st.columns([1.3, 1])
 
         with chart_col:
             st.subheader("Spending Analysis")
-            expenses_only = df[df["type"] == "Expense"]
             by_cat = expenses_only.groupby("category")["amount"].sum().sort_values(ascending=False).reset_index()
             fig = px.bar(
                 by_cat, x="category", y="amount", 

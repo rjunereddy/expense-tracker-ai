@@ -19,6 +19,9 @@ def parse_bank_email_body(body_text: str):
     """
     Tries to extract amount and merchant from a generic bank email body.
     """
+    # Strip HTML tags
+    body_text = re.sub(r'<[^>]+>', ' ', body_text)
+    
     # Clean up whitespace and newlines for easier regex matching
     body_text = re.sub(r'\s+', ' ', body_text).replace(',', '')
     
@@ -28,9 +31,9 @@ def parse_bank_email_body(body_text: str):
         return None, None
     amount = float(amt_match.group(1))
     
-    # Try to find merchant (at <merchant>, to <merchant>)
+    # Try to find merchant (at <merchant>, to <merchant>, for <merchant>)
     merchant = "Unknown Merchant"
-    merchant_match = re.search(r'(?:at|to|info)\s+([A-Za-z0-9\s*#]+?)(?:\s+on|\s+ref|\s+via|\.|$)', body_text, re.IGNORECASE)
+    merchant_match = re.search(r'(?:at|to|info|for|from|in)\s+([A-Za-z0-9\s*#\-]+?)(?:\s+on|\s+ref|\s+via|\.|$)', body_text, re.IGNORECASE)
     if merchant_match:
         merchant = merchant_match.group(1).strip()
         
@@ -49,6 +52,11 @@ def check_new_emails():
         # Search for all unread emails (we will filter in python to be safe)
         status, messages = mail.search(None, 'UNSEEN')
         
+        if messages[0]:
+            print(f"[*] Found {len(messages[0].split())} unread email(s) in inbox. Analyzing...")
+        else:
+            print("[-] No unread emails found in inbox.")
+        
         if status == "OK" and messages[0]:
             email_ids = messages[0].split()
             for e_id in email_ids:
@@ -65,9 +73,8 @@ def check_new_emails():
                         body = ""
                         if msg.is_multipart():
                             for part in msg.walk():
-                                if part.get_content_type() == "text/plain":
-                                    body = part.get_payload(decode=True).decode(errors="ignore")
-                                    break
+                                if part.get_content_type() in ["text/plain", "text/html"]:
+                                    body += part.get_payload(decode=True).decode(errors="ignore") + " "
                         else:
                             body = msg.get_payload(decode=True).decode(errors="ignore")
                             
