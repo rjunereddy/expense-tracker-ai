@@ -111,10 +111,16 @@ def log_transaction(amount, merchant):
     print(f"[*] Logged & Categorized as '{pred_cat}' ({(conf*100):.0f}% confidence)")
 
 if __name__ == "__main__":
-    print("="*60)
-    print("📧 Email Sync Worker Started")
-    print("Listening for unread bank alert emails...")
-    print("="*60)
-    while True:
+    if os.getenv("RUN_ONCE"):
+        print("="*60)
+        print("📧 Running one-off Email Sync (GitHub Actions)")
+        print("="*60)
         check_new_emails()
-        time.sleep(60) # Polling every 60 seconds
+    else:
+        print("="*60)
+        print("📧 Email Sync Worker Started")
+        print("Listening for unread bank alert emails...")
+        print("="*60)
+        while True:
+            check_new_emails()
+            time.sleep(60) # Polling every 60 seconds
