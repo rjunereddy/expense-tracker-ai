@@ -35,9 +35,9 @@ def get_model(df, username):
             # Fallback to the base model if user has no data yet
             categorize.MODEL_PATH = "data/categorizer.joblib"
             if not os.path.exists("data/categorizer.joblib"):
-                # If absolute base model doesn't exist, we must generate a tiny bit of training data just for the ML engine
+                # If absolute base model doesn't exist, we must generate training data just for the ML engine
                 from generate_data import generate
-                train(generate(n_days=30))
+                train(generate(n_days=180)) # Increased from 30 to 180 to guarantee multiple samples per class for stratify=y
     return load_model()
 
 
