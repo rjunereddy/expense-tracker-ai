@@ -49,6 +49,11 @@ def save_transactions(username: str, df: pd.DataFrame):
 
 def append_transaction(username: str, row: dict):
     """Appends a single transaction (used by bots and manual logger)"""
+    df = get_transactions(username)
+    # Auto-increment txn_id
+    if "txn_id" not in row or row["txn_id"] is None:
+        row["txn_id"] = int(df["txn_id"].max() + 1) if not df.empty else 1
+
     if USE_SUPABASE:
         try:
             row_copy = row.copy()
@@ -57,9 +62,5 @@ def append_transaction(username: str, row: dict):
         except Exception as e:
             print(f"Supabase append error: {e}")
     else:
-        df = get_transactions(username)
-        # Auto-increment txn_id for CSV
-        if "txn_id" not in row or row["txn_id"] is None:
-            row["txn_id"] = int(df["txn_id"].max() + 1) if not df.empty else 1
         df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
         save_transactions(username, df)
