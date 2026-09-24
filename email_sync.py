@@ -46,9 +46,8 @@ def check_new_emails():
         mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
         mail.select("inbox")
         
-        # Search for unread emails containing typical transaction keywords
-        # Adjust these keywords based on your bank's specific email subjects
-        status, messages = mail.search(None, '(UNSEEN OR SUBJECT "Transaction" SUBJECT "Alert" SUBJECT "Debited")')
+        # Search for all unread emails (we will filter in python to be safe)
+        status, messages = mail.search(None, 'UNSEEN')
         
         if status == "OK" and messages[0]:
             email_ids = messages[0].split()
